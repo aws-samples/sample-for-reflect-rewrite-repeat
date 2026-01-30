@@ -1,0 +1,10 @@
+torch>=2.6.0 
+transformers>=4.49.0 
+accelerate==1.3.0
+wandb==0.19.4
+datasets
+matplotlib
+boto3
+peft
+fastapi
+uvicorn
