@@ -44,7 +44,7 @@ The cycle continues until the solution converges to correctness. The preference 
 
 ## Training Pipeline
 
-![Learn-to-Solve Diagram](learn-to-solve-diagram.png)
+![Learn-to-Solve Diagram](r3_diagram.png)
 
 The complete training pipeline consists of:
 
@@ -122,10 +122,9 @@ python main.py \
   --use_lora \
   --lora_r 16 \
   --bedrock_model_basic "c35_haiku" \
-  --bedrock_model_advanced "c37_sonnet" \
   --dataset_source "gsm8k" \
   --max_samples 700 \
-  --epochs 2 \
+  --epochs 1 \
   --checkpoint_interval 50 \
   --wandb_project "r3_reasoning"
 ```
@@ -161,87 +160,54 @@ python main.py \
   - `--s3_bucket_name`: S3 bucket for checkpoint storage
   - `--wandb_project`: Weights & Biases project name
 
-## How R³ Works
+## Evaluation
 
-### 1. Mathematical Problem Selection
+### Standard Evaluation
 
-Problems are loaded from the specified dataset source (HuggingFace or local files). For each problem, the system tracks:
-- The question text
-- The expected numerical answer
-- Metadata for analysis
+Evaluate trained models on benchmark datasets:
 
-### 2. Solution Generation and Evaluation
+```bash
+python evaluation.py \
+  --s3_folder "your-experiment-folder" \
+  --bucket "your-s3-bucket" \
+  --dataset_type "gsm8k" \
+  --batch_size 4 \
+  --max_samples 500
+```
 
-For each problem, the system:
-- Generates an initial solution using the target model
-- Evaluates format correctness (proper tag usage)
-- Checks answer correctness against the expected answer
-- Calculates a combined score based on these metrics
+### Comprehensive Model Assessment (Alternative Tool)
 
-### 3. R³ Improvement Cycle
+For in-depth analysis of mathematical reasoning capabilities across multiple dimensions, use the standalone `model_evaluator.py` tool:
 
-If the initial solution is incorrect:
-- **Reflect**: Feedback is obtained from AWS Bedrock models identifying specific errors
-- **Rewrite**: Improved solutions are generated based on this feedback
-- **Repeat**: The process iterates for a configurable number of attempts
-- When a better solution is found, DPO training is performed on the preference pair
+```bash
+python model_evaluator.py \
+  --models "Qwen/Qwen2.5-7B-Instruct" "meta-llama/Llama-3.1-8B-Instruct" \
+  --interactive
+```
 
-### 4. Verification Phase
+This comprehensive assessment tool provides:
+- **Multi-dimensional evaluation** across 8 mathematical reasoning categories:
+  - Arithmetic operations
+  - Algebraic reasoning
+  - Numerical computation
+  - Mathematical proof
+  - Probabilistic reasoning
+  - Sequential reasoning
+  - Geometric understanding
+  - Edge case handling
+- **Interactive assessment** with adaptive follow-up questions
+- **Rich visualizations**: Radar charts, heatmaps, and performance comparisons
+- **Detailed reports**: Strengths/weaknesses analysis and problem-solving approach insights
+- **Benchmark evaluation**: GSM8K, AIME, AMC, MathQA, MATH datasets
 
-After DPO training:
-- The model generates new answers to verify learning
-- If issues persist, additional feedback and DPO cycles are applied
-- Successful verification may trigger Supervised Fine-Tuning (SFT)
+The tool generates:
+- `llm_reasoning_comparison_radar.png` - Performance comparison across categories
+- `llm_reasoning_comparison_benchmarks.png` - Benchmark performance comparison
+- `llm_reasoning_comparison_heatmap.png` - Detailed capability heatmap
+- `llm_reasoning_assessment_report.json` - Structured results data
+- `llm_reasoning_assessment_report.md` - Human-readable analysis
 
-### 5. Bucket List Processing
-
-Unsolved problems after all attempts are placed in a "bucket list" for:
-- Additional improvement attempts using advanced models
-- Tracking challenging problem types
-- Targeted training in future epochs
-
-## Visualization and Analysis
-
-The system automatically generates visualizations showing:
-- Answer and format accuracy over time
-- DPO and SFT loss curves
-- Bucket list size evolution
-- Verification attempt statistics
-- Moving averages for stable trend analysis
-
-## Advanced Features
-
-### Checkpoint Management
-
-- Periodic checkpoints during training
-- Automatic uploading to S3
-- Option to resume from checkpoints
-- Full state preservation including metrics and bucket lists
-
-### Model Quantization
-
-Support for training with reduced precision:
-- 4-bit and 8-bit quantization options
-- Compatible with LoRA for memory-efficient training
-- Gradient checkpointing for larger models
-
-### High-Quality SFT Data Generation
-
-As a byproduct of the R³ process, the framework generates:
-- High-fidelity reasoning traces
-- Annotation-free training data
-- Verified solution paths
-- Scalable fine-tuning datasets
-
-## Research Highlights
-
-Our work emphasizes that reasoning improvements need not strictly depend on large-scale data or compute-intensive RL methods. Key findings include:
-
-- **Minimal Data Requirements**: 700 carefully curated samples rival systems trained on hundreds of thousands
-- **Strategic Curation**: Quality and foundational principles matter more than quantity
-- **Model Agnostic**: Framework transfers across different model families
-- **Competitive Generalization**: Strong performance across diverse reasoning benchmarks
-- **Resource Accessible**: Enables reasoning research for resource-constrained teams
+**Note:** `model_evaluator.py` is independent of the training pipeline and can be used to assess any compatible model, including base models, checkpoints, or AWS Bedrock models.
 
 ## Contributors
 
@@ -254,11 +220,12 @@ Our work emphasizes that reasoning improvements need not strictly depend on larg
 If you use this framework in your research, please cite:
 
 ```bibtex
-@article{r3_framework,
-  title={R³: Resource-Efficient Reasoning Enhancement through Reflect, Rewrite, Repeat},
-  author={[Authors]},
-  journal={[Journal/Conference]},
-  year={2025}
+@inproceedings{wang2026reflect,
+  title={Reflect, Rewrite, Repeat: How Simple Arithmetic Enables Advanced Reasoning in Small Language Models},
+  author={Mengdie Flora Wang and Haochen Xie and Mun Young Kim and Baishali Chaudhury and Meghana Ashok and Suren Gunturu and Sungmin Hong and Jae Oh Woo},
+  booktitle={19th Conference of the European Chapter of the Association for Computational Linguistics},
+  year={2026},
+  url={https://openreview.net/forum?id=RUtFlA6E9O}
 }
 ```
 
@@ -270,6 +237,3 @@ If you use this framework in your research, please cite:
 - TRL library for DPO implementation inspiration
 - The creators of mathematical datasets (GSM8K, AIME, etc.) for benchmark problems
 
-## License
-
-[License information]
